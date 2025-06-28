@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Try Now - AI COACH</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        .nav-link {
+            color: #ffffff; /* White color for navigation links */
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: color 0.3s ease;
+            text-decoration: none;
+        }
+        .nav-link:hover {
+            color: #4F46E5; /* Change color on hover */
+        }
+        .trynow-section {
+            background-color: #F3F4F6;
+        }
+        .trynow-btn {
+            background-color: #4F46E5;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .trynow-btn:hover {
+            background-color: #4338CA;
+            animation: heartbeat 1s infinite;
+        }
+        @keyframes heartbeat {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        /* Additional Features section */
+        .feature-card {
+            transition: transform 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <!-- Navigation bar -->
+    <nav class="bg-gray-900 text-white py-2">
+        <div class="container mx-auto flex justify-between items-center px-4">
+            <div>
+                <button style="border: none; background: none; padding: 0; cursor: pointer;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="300" height="80" viewBox="0 0 400 100">
+                      <text x="0" y="60" class="logo-text animate__animated animate__fadeIn"
+                            font-family="Arial, sans-serif" font-size="50" fill="#155263" font-weight="bold">AI</text>
+                      <text x="70" y="60" class="logo-text animate__animated animate__fadeIn"
+                            font-family="Arial, sans-serif" font-size="50" fill="#fac70b" font-weight="bold">COACH</text>
+                      <animate attributeName="opacity" dur="1s" values="0;1" repeatCount="1" />
+                    </svg>
+                  </button>
+                  
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="overview PCL.html" class="nav-link">Overview</a>
+                <a href="about PCL.html" class="nav-link">About</a>
+                <a href="product PCL.html" class="nav-link">Product</a>
+                <a href="signup PCL.html" class="nav-link">Sign Up</a>
+                <a href="login PCL.html" class="nav-link">Login</a>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Try Now section -->
+    <section class="trynow-section py-16">
+        <div class="container mx-auto text-center">
+            <h2 class="text-2xl font-bold mb-8">Get Started with Our Coach</h2>
+            <p class="text-lg mb-8">Join with friends in an AI environment and achieve greater heights.</p>
+            <a href="#" class="trynow-btn">Try Now</a>
+        </div>
+    </section>
+
+    <!-- Additional Features section -->
+    <section class="py-16">
+        <div class="container mx-auto text-center">
+            <h2 class="text-2xl font-bold mb-8">Additional Features</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="p-4 border rounded shadow-md feature-card">
+                    <h3 class="text-xl font-semibold mb-4">AI Chat Assistance</h3>
+                    <p class="text-gray-700">Get instant help and guidance from an AI chatbot assistant.</p>
+                </div>
+                <div class="p-4 border rounded shadow-md feature-card">
+                    <h3 class="text-xl font-semibold mb-4">Document Summarization</h3>
+                    <p class="text-gray-700">Quickly summarize lengthy documents to get key insights in seconds.</p>
+                </div>
+                <div class="p-4 border rounded shadow-md feature-card">
+                    <h3 class="text-xl font-semibold mb-4">Language Translation</h3>
+                    <p class="text-gray-700">Translate text between multiple languages with high accuracy.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer section -->
+    <footer class="bg-gray-900 text-white py-8 text-center">
+        <div class="container mx-auto">
+            <h3 class="text-xl">&copy; 2024 CostarAI. All rights reserved.</h3>
+        </div>
+    </footer>
+</body>
+</html>

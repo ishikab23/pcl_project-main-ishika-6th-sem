@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMI Calculator</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="./bmi.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    
+    <style>
+        /* Custom styles */
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            border: 2px solid #4F46E5; /* Light gray border */
+            border-radius: 5px;
+            cursor: pointer;
+            transition: color 0.5s ease;
+            transition: background-color 0.5s ease; /* Indicate clickable behavior */
+        }
+        .button:hover {
+            background-color: #4338CA;
+            color: #ffffff; /* Darker purple background on hover */
+            outline: 2px solid #7986cb; /* Purple outline on hover */
+        }
+
+        .nav-link {
+            color: #ffffff; /* White color for navigation links */
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: color 0.3s ease;
+            text-decoration: none;
+        }
+        .nav-link:hover {
+            color: #4F46E5; /* Change color on hover */
+        }
+        .get-started-btn {
+            background-color: #4F46E5;
+            color: white;
+            padding: 1.5rem 3rem; /* Adjusted padding for larger button */
+            border-radius: 0.5rem;
+            margin: 0.5rem;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+            font-size: 1.25rem; /* Adjusted font size for larger button */
+        }
+        .get-started-btn:hover {
+            background-color: #4338CA;
+        }
+        .feature {
+            border: 2px solid #4F46E5;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: transform 0.3s ease;
+        }
+        .feature:hover {
+            transform: translateY(-5px);
+        }
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .game {
+            background-color: #F3F4F6;
+            padding: 2rem;
+            border-radius: 1rem;
+            margin-top: 2rem;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        .game:hover {
+            transform: translateY(-5px);
+        }
+        .game-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        .game-description {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        .game-link {
+            background-color: #4F46E5;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+        .game-link:hover {
+            background-color: #4338CA;
+        }
+
+        input{
+    border: none;
+    border-bottom: 1px solid #0044ff;
+    width: 50%;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    outline: none;
+    padding: 10px;
+    text-align: center;
+    font-size: 25px;
+}
+
+#result{
+    margin-top: 20px;
+    font-size: 25px;
+}
+    </style>
+</head>
+<body class="font-sans">
+    <!-- Navigation bar -->
+    <nav class="bg-gray-900 text-white py-2">
+        <div class="container mx-auto flex justify-between items-center px-4">
+            <div>
+                <button style="border: none; background: none; padding: 0; cursor: pointer;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="300" height="80" viewBox="0 0 400 100">
+                      <text x="0" y="60" class="logo-text animate__animated animate__fadeIn"
+                            font-family="Arial, sans-serif" font-size="50" fill="#155263" font-weight="bold">AI</text>
+                      <text x="70" y="60" class="logo-text animate__animated animate__fadeIn"
+                            font-family="Arial, sans-serif" font-size="50" fill="#fac70b" font-weight="bold">COACH</text>
+                      <animate attributeName="opacity" dur="1s" values="0;1" repeatCount="1" />
+                    </svg>
+                  </button>
+                  
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="overview PCL.html" class="nav-link">Overview</a>
+                <a href="about PCL.html" class="nav-link">About</a>
+                <a href="product PCL.html" class="nav-link">Product</a>
+                <a href="signup PCL.html" class="nav-link">Sign Up</a>
+                <a href="login PCL.html" class="nav-link">Login</a>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Product section -->
+    <section class="bg-gray-100 py-16">
+
+        <div class="max-w-xl mx-auto bg-white shadow-lg rounded-lg p-8 animate__animated animate__bounceIn">
+            <h2 class="text-2xl font-bold mb-8 text-center animate__animated animate__bounceIn">BMI Calculator</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="height" class="block text-gray-700">Height (cm)</label>
+                    <input type="number" id="height" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="weight" class="block text-gray-700">Weight (kg)</label>
+                    <input type="number" id="weight" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="text-center">
+                    <button id="btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full transition">Calculate</button>
+                </div>
+                <div id="result" class="text-center text-lg font-semibold text-purple-700 mt-4"></div>
+            </div>
+        </div>
+        
+    </section>
+
+    <!-- Get started with CostarAI -->
+    <section class="bg-gray-300 py-16">
+        <div class="container mx-auto">
+            <h2 class="text-2xl font-bold mb-8 text-center animate__animated animate__bounceIn">Get started with CostarAI</h2>
+            <div class="flex justify-center items-center space-x-4 animate__animated animate__fadeIn">
+                <a href="signup PCL.html" class="get-started-btn">Sign Up</a>
+                <a href="login PCL.html" class="get-started-btn">Login</a>
+                <a href="trynow PCL.html" class="get-started-btn">Try for Free</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer section -->
+    <footer class="bg-gray-900 text-white py-8 text-center">
+        <div class="container mx-auto">
+            <h3 class="text-xl">&copy; 2024 AI COACH. All rights reserved.</h3>
+        </div>
+    </footer>
+
+    <!-- <script>
+        function openGame(gameUrl) {
+            window.open(gameUrl, '_blank');
+        }
+    </script> -->
+</body>
+</html>

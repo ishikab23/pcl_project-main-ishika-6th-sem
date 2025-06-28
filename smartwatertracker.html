@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Water Intake Tracker | Go Fit</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <style>
+        .water-glass {
+            width: 120px;
+            height: 200px;
+            border: 3px solid #3b82f6;
+            border-radius: 0 0 30px 30px;
+            position: relative;
+            overflow: hidden;
+            margin: 30px auto;
+            background: rgba(59, 130, 246, 0.1);
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .water-level {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: linear-gradient(to top, #3b82f6, #93c5fd);
+            transition: height 0.5s ease;
+            box-shadow: 0 -2px 10px rgba(59, 130, 246, 0.3);
+        }
+        .water-overflow {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 20px;
+            background: linear-gradient(to top, #3b82f6, #93c5fd);
+            animation: overflow 1.5s ease-out;
+            transform-origin: top;
+        }
+        @keyframes overflow {
+            0% { height: 20px; opacity: 1; }
+            100% { height: 40px; opacity: 0; }
+        }
+        .calendar-day {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin: 2px;
+        }
+        .completed {
+            background-color: #10b981;
+            color: white;
+        }
+        .not-completed {
+            background-color: #ef4444;
+            color: white;
+        }
+        .future-day {
+            background-color: #e5e7eb;
+            color: #6b7280;
+        }
+        .today {
+            border: 2px solid #3b82f6;
+        }
+    </style>
+</head>
+<body class="font-sans bg-gray-50 min-h-screen flex flex-col">
+    <!-- Navigation -->
+    <nav class="bg-gray-900 text-white py-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center px-6">
+            <div>
+                <a href="index.html" class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="300" height="80" viewBox="0 0 400 100">
+                        <text x="0" y="60" font-family="Arial, sans-serif" font-size="50" fill="#155263" font-weight="bold">Go </text>
+                        <text x="70" y="60" font-family="Arial, sans-serif" font-size="50" fill="#fac70b" font-weight="bold">Fit</text>
+                    </svg>
+                </a>
+            </div>
+            <div class="flex space-x-6">
+                <a href="#" id="authLink" class="text-white hover:text-blue-300 transition duration-200">Sign In</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="flex-grow container mx-auto px-4 py-12 max-w-6xl">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-800 mb-4">Smart Water Intake Tracker</h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">Stay hydrated and track your daily water consumption with personalized recommendations based on your body details.</p>
+        </div>
+        
+        <!-- User Input Section -->
+        <div id="userInputSection" class="bg-white rounded-xl shadow-lg p-8 mb-8 border border-gray-100">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6 pb-2 border-b border-gray-200">Tell Us About Yourself</h2>
+            <form id="userDetailsForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="ageGroup" class="block text-sm font-medium text-gray-700 mb-2">Age Group</label>
+                    <select id="ageGroup" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                        <option value="" disabled selected>Select your age group</option>
+                        <option value="infant_0_6">Infant (0-6 months)</option>
+                        <option value="infant_6_12">Infant (6-12 months)</option>
+                        <option value="toddler_1_3">Toddler (1-3 years)</option>
+                        <option value="child_4_8">Child (4-8 years)</option>
+                        <option value="girl_9_13">Girl (9-13 years)</option>
+                        <option value="boy_9_13">Boy (9-13 years)</option>
+                        <option value="woman">Adult Woman</option>
+                        <option value="man">Adult Man</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="weight" class="block text-sm font-medium text-gray-700 mb-2">Weight (kg)</label>
+                    <input type="number" id="weight" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200" placeholder="Enter your weight">
+                </div>
+                <div>
+                    <label for="activityLevel" class="block text-sm font-medium text-gray-700 mb-2">Activity Level</label>
+                    <select id="activityLevel" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                        <option value="sedentary">Sedentary (little or no exercise)</option>
+                        <option value="lightly_active">Lightly Active (light exercise 1-3 days/week)</option>
+                        <option value="moderately_active">Moderately Active (moderate exercise 3-5 days/week)</option>
+                        <option value="very_active">Very Active (hard exercise 6-7 days/week)</option>
+                        <option value="extra_active">Extra Active (very hard exercise & physical job)</option>
+                    </select>
+                </div>
+                <div class="flex items-end md:col-span-2">
+                    <button type="button" onclick="calculateWaterIntake()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition duration-300 transform hover:scale-105 shadow-md">
+                        Calculate My Water Needs
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="bg-white rounded-xl shadow-lg p-8 mb-8 border border-gray-100 hidden">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6 pb-2 border-b border-gray-200">Your Daily Water Intake Goal</h2>
+            <div class="flex flex-col md:flex-row items-center justify-between mb-8">
+                <div class="text-center mb-8 md:mb-0">
+                    <div class="text-5xl font-bold text-blue-600 mb-2" id="recommendedAmount">0</div>
+                    <div class="text-gray-600 text-lg">liters per day</div>
+                    <div class="mt-4 text-sm text-gray-500">Based on your profile</div>
+                </div>
+                <div class="text-center relative">
+                    <div class="water-glass">
+                        <div id="waterLevel" class="water-level" style="height: 0%"></div>
+                    </div>
+                    <div class="text-gray-600 mt-2">Your hydration progress</div>
+                </div>
+            </div>
+            
+            <div class="mb-8">
+                <div class="flex justify-between mb-2">
+                    <span class="text-sm font-medium text-gray-700">Daily Progress</span>
+                    <span class="text-sm font-medium text-gray-700"><span id="consumedAmount">0</span> / <span id="totalAmount">0</span> L</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div id="progress" class="bg-blue-600 h-4 rounded-full transition-all duration-500 ease-in-out" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Add Water Intake Section -->
+            <div class="mb-8">
+                <h3 class="text-lg font-medium text-gray-800 mb-4">Add Water Intake</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                    <button onclick="addWater(0.25)" class="bg-blue-50 hover:bg-blue-100 text-blue-800 font-medium py-3 px-4 rounded-lg transition duration-300 border border-blue-200 hover:border-blue-300 transform hover:scale-105">
+                        <span class="block text-xl">🥛</span>
+                        <span>Small Cup (0.25 L)</span>
+                    </button>
+                    <button onclick="addWater(0.5)" class="bg-blue-50 hover:bg-blue-100 text-blue-800 font-medium py-3 px-4 rounded-lg transition duration-300 border border-blue-200 hover:border-blue-300 transform hover:scale-105">
+                        <span class="block text-xl">🍵</span>
+                        <span>Large Cup (0.5 L)</span>
+                    </button>
+                    <button onclick="addWater(1)" class="bg-blue-50 hover:bg-blue-100 text-blue-800 font-medium py-3 px-4 rounded-lg transition duration-300 border border-blue-200 hover:border-blue-300 transform hover:scale-105">
+                        <span class="block text-xl">💧</span>
+                        <span>Bottle (1 L)</span>
+                    </button>
+                </div>
+                <div class="flex items-center">
+                    <input type="number" id="customAmount" class="flex-grow px-4 py-3 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200" placeholder="Custom amount">
+                    <span class="px-4 py-3 bg-gray-100 text-gray-700 border-t border-b border-gray-300">L</span>
+                    <button onclick="addCustomWater()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-r-lg transition duration-300">
+                        Add
+                    </button>
+                </div>
+            </div>
+
+            <!-- Reset Button -->
+            <div class="text-center">
+                <button onclick="resetTracker()" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-6 rounded-lg transition duration-300 border border-gray-200">
+                    Reset Daily Tracker
+                </button>
+            </div>
+        </div>
+
+        <!-- Guidelines and Calendar Section -->
+        <div class="flex flex-col md:flex-row gap-8">
+            <!-- Water Intake Guidelines (Left Side) -->
+            <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-100 flex-1">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6 pb-2 border-b border-gray-200">Water Intake Guidelines</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age Group</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recommended Daily Intake</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr class="hover:bg-gray-50 transition duration-150">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Infants (0–6 months)</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">0.68 L of breast milk/formula</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition duration-150">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Infants (6–12 months)</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">0.8–1.0 L including breast milk/formula and small amounts of water</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition duration-150">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Toddlers (1–3 years)</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">1.1–1.3 L</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition duration-150">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Children (4–8 years)</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">1.6 L</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition duration-150">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Girls (9–13 years)</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">1.9 L</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition duration-150">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Boys (9–13 years)</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">2.1 L</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition duration-150">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Adults (Women)</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">2.7 L</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition duration-150">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Adults (Men)</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">3.7 L</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <p class="text-sm text-blue-800">💡 <span class="font-medium">Note:</span> These are general guidelines. Your personal needs may vary based on activity level, climate, and health conditions.</p>
+                </div>
+            </div>
+
+            <!-- Calendar Section (Right Side) -->
+            <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-100 flex-1">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6 pb-2 border-b border-gray-200">Hydration Calendar</h2>
+                <div id="calendar" class="grid grid-cols-7 gap-1">
+                    <!-- Calendar will be generated by JavaScript -->
+                </div>
+                <div class="mt-6 flex justify-center space-x-4">
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
+                        <span class="text-sm">Goal Met</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
+                        <span class="text-sm">Goal Not Met</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full bg-gray-300 mr-2"></div>
+                        <span class="text-sm">Future Day</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-8 text-center mt-12 shadow-lg">
+        <div class="container mx-auto">
+            <p class="text-gray-300">&copy; 2025 Go Fit. All rights reserved.</p>
+            <div class="mt-2 flex justify-center space-x-4">
+                <a href="#" class="text-gray-400 hover:text-white transition duration-200">Privacy Policy</a>
+                <a href="#" class="text-gray-400 hover:text-white transition duration-200">Terms of Service</a>
+                <a href="#" class="text-gray-400 hover:text-white transition duration-200">Contact Us</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBs0CaTNrX-GAGOzXEyIP6VSu4gZ15M6eY",
+            authDomain: "nullbyte-dc172.firebaseapp.com",
+            projectId: "nullbyte-dc172",
+            storageBucket: "nullbyte-dc172.appspot.com",
+            messagingSenderId: "689898628765",
+            appId: "1:689898628765:web:c89f05325853e5ee245674",
+            measurementId: "G-FJGRLLLZRX"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        
+        let dailyGoal = 0;
+        let consumed = 0;
+        let wasFull = false;
+        let currentUser = null;
+        let userWaterData = null;
+        let lastResetDate = null;
+    
+        // Authentication state observer
+        auth.onAuthStateChanged(user => {
+            currentUser = user;
+            const authLink = document.getElementById('authLink');
+            
+            if (user) {
+                // User is signed in
+                authLink.textContent = 'Sign Out';
+                authLink.onclick = () => auth.signOut();
+                checkUserWaterData();
+            } else {
+                // No user is signed in
+                authLink.textContent = 'Sign In';
+                authLink.onclick = () => {
+                    // Simple email/password auth for demo
+                    const email = prompt('Enter email (demo: test@test.com)');
+                    const password = prompt('Enter password (demo: password)');
+                    if (email && password) {
+                        auth.signInWithEmailAndPassword(email, password)
+                            .catch(error => {
+                                if (error.code === 'auth/user-not-found') {
+                                    // Create new user if doesn't exist
+                                    auth.createUserWithEmailAndPassword(email, password);
+                                } else {
+                                    alert('Error: ' + error.message);
+                                }
+                            });
+                    }
+                };
+                document.getElementById('userInputSection').classList.remove('hidden');
+                document.getElementById('resultsSection').classList.add('hidden');
+            }
+        });
+    
+        // Check if user has water data in Firestore
+        async function checkUserWaterData() {
+            if (!currentUser) return;
+            
+            try {
+                const doc = await db.collection('users').doc(currentUser.uid).collection('watergoals').doc('current').get();
+                
+                if (doc.exists) {
+                    // User has existing water data - load it
+                    userWaterData = doc.data();
+                    dailyGoal = userWaterData.dailyGoal || 0;
+                    
+                    // Check if we need to reset for a new day
+                    const today = new Date();
+                    const todayDateStr = getDateString(today);
+                    
+                    // Check if we've already reset today
+                    if (userWaterData.lastResetDate !== todayDateStr) {
+                        // New day - reset consumption
+                        consumed = 0;
+                        wasFull = false;
+                        
+                        // Update Firestore with reset
+                        await db.collection('users').doc(currentUser.uid).collection('watergoals').doc('current').update({
+                            consumed: 0,
+                            lastResetDate: todayDateStr,
+                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        // Create new history entry for today
+                        await db.collection('users').doc(currentUser.uid).collection('waterhistory').doc(todayDateStr).set({
+                            date: todayDateStr,
+                            goalMet: false,
+                            amountConsumed: 0,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    } else {
+                        // Same day - use existing consumption
+                        consumed = userWaterData.consumed || 0;
+                        wasFull = consumed >= dailyGoal;
+                    }
+                    
+                    // Show results and hide calculator
+                    document.getElementById('userInputSection').classList.add('hidden');
+                    document.getElementById('resultsSection').classList.remove('hidden');
+                    document.getElementById('recommendedAmount').textContent = dailyGoal.toFixed(1);
+                    document.getElementById('totalAmount').textContent = dailyGoal.toFixed(1);
+                    document.getElementById('consumedAmount').textContent = consumed.toFixed(1);
+                    updateProgress();
+                    
+                    // Generate calendar with historical data
+                    generateCalendar();
+                } else {
+                    // No data exists - show calculator
+                    document.getElementById('userInputSection').classList.remove('hidden');
+                    document.getElementById('resultsSection').classList.add('hidden');
+                }
+            } catch (error) {
+                console.error("Error checking user data:", error);
+                // Show calculator as fallback
+                document.getElementById('userInputSection').classList.remove('hidden');
+                document.getElementById('resultsSection').classList.add('hidden');
+            }
+        }
+    
+        // Helper function to get date string in YYYY-MM-DD format
+        function getDateString(date) {
+            return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+        }
+    
+        // Generate calendar with completion status
+        async function generateCalendar() {
+            const calendarEl = document.getElementById('calendar');
+            calendarEl.innerHTML = '';
+            
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            
+            // Add day headers
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayNames.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'text-center font-medium text-gray-700';
+                dayHeader.textContent = day;
+                calendarEl.appendChild(dayHeader);
+            });
+            
+            // Get first day of month (0-6, where 0 is Sunday)
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            
+            // Add empty cells for days before the first day of the month
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDay = document.createElement('div');
+                calendarEl.appendChild(emptyDay);
+            }
+            
+            // Load historical data for this month
+            let historyData = {};
+            if (currentUser) {
+                try {
+                    const startDate = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-01`;
+                    const endDate = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${daysInMonth.toString().padStart(2, '0')}`;
+                    
+                    const snapshot = await db.collection('users')
+                        .doc(currentUser.uid)
+                        .collection('waterhistory')
+                        .where('date', '>=', startDate)
+                        .where('date', '<=', endDate)
+                        .get();
+                    
+                    snapshot.forEach(doc => {
+                        historyData[doc.data().date] = doc.data();
+                    });
+                } catch (error) {
+                    console.error("Error loading history data:", error);
+                }
+            }
+            
+            // Add days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day';
+                dayEl.textContent = day;
+                
+                const dateStr = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                
+                // Check if this is today or in the future
+                if (day === today.getDate() && currentMonth === today.getMonth()) {
+                    // Today - highlight
+                    dayEl.classList.add('today');
+                    
+                    // Check if goal is already met today
+                    if (consumed >= dailyGoal) {
+                        dayEl.classList.add('completed');
+                    } else {
+                        dayEl.classList.add('not-completed');
+                    }
+                } else if (day > today.getDate() || currentMonth > today.getMonth()) {
+                    // Future day
+                    dayEl.classList.add('future-day');
+                } else {
+                    // Past day - check if goal was met
+                    const dayData = historyData[dateStr];
+                    if (dayData && dayData.goalMet) {
+                        dayEl.classList.add('completed');
+                    } else {
+                        dayEl.classList.add('not-completed');
+                    }
+                }
+                
+                calendarEl.appendChild(dayEl);
+            }
+        }
+        
+        async function calculateWaterIntake() {
+            const ageGroup = document.getElementById('ageGroup').value;
+            const weight = parseFloat(document.getElementById('weight').value);
+            const activityLevel = document.getElementById('activityLevel').value;
+            
+            if (!ageGroup) {
+                alert('Please select your age group');
+                return;
+            }
+            
+            if (!weight || weight <= 0) {
+                alert('Please enter a valid weight');
+                return;
+            }
+            
+            // Base recommendation based on age group (converted to liters)
+            switch(ageGroup) {
+                case 'infant_0_6':
+                    dailyGoal = 0.68;
+                    break;
+                case 'infant_6_12':
+                    dailyGoal = 0.9; // average of 0.8-1.0
+                    break;
+                case 'toddler_1_3':
+                    dailyGoal = 1.2; // average of 1.1-1.3
+                    break;
+                case 'child_4_8':
+                    dailyGoal = 1.6;
+                    break;
+                case 'girl_9_13':
+                    dailyGoal = 1.9;
+                    break;
+                case 'boy_9_13':
+                    dailyGoal = 2.1;
+                    break;
+                case 'woman':
+                    dailyGoal = 2.7;
+                    break;
+                case 'man':
+                    dailyGoal = 3.7;
+                    break;
+            }
+            
+            // Adjust for weight (0.035L per kg is a common recommendation)
+            const weightBased = weight * 0.035;
+            
+            // Take the higher of the two values
+            dailyGoal = Math.max(dailyGoal, weightBased);
+            
+            // Adjust for activity level
+            switch(activityLevel) {
+                case 'lightly_active':
+                    dailyGoal *= 1.1;
+                    break;
+                case 'moderately_active':
+                    dailyGoal *= 1.2;
+                    break;
+                case 'very_active':
+                    dailyGoal *= 1.3;
+                    break;
+                case 'extra_active':
+                    dailyGoal *= 1.4;
+                    break;
+            }
+            
+            // Round to nearest 0.1L
+            dailyGoal = Math.round(dailyGoal * 10) / 10;
+            
+            // Display results
+            document.getElementById('recommendedAmount').textContent = dailyGoal.toFixed(1);
+            document.getElementById('totalAmount').textContent = dailyGoal.toFixed(1);
+            document.getElementById('resultsSection').classList.remove('hidden');
+            document.getElementById('userInputSection').classList.add('hidden');
+            
+            // Reset consumption tracking for new day
+            const today = new Date();
+            const todayDateStr = getDateString(today);
+            consumed = 0;
+            wasFull = false;
+            updateProgress();
+            
+            // Save to Firestore if user is authenticated
+            if (currentUser) {
+                try {
+                    // Create or update the watergoals document
+                    await db.collection('users').doc(currentUser.uid).collection('watergoals').doc('current').set({
+                        dailyGoal,
+                        consumed: 0,
+                        lastResetDate: todayDateStr,
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+                        ageGroup,
+                        weight,
+                        activityLevel
+                    });
+                    
+                    // Create initial history entry for today
+                    await db.collection('users').doc(currentUser.uid).collection('waterhistory').doc(todayDateStr).set({
+                        date: todayDateStr,
+                        goalMet: false,
+                        amountConsumed: 0,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                    
+                    // Generate calendar
+                    generateCalendar();
+                } catch (error) {
+                    console.error("Error saving user data:", error);
+                }
+            }
+            
+            // Scroll to results
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        async function addWater(amount) {
+            consumed += amount;
+            updateProgress();
+            animateButton(`button[onclick="addWater(${amount})"]`);
+            
+            // Save to Firestore if user is authenticated
+            if (currentUser) {
+                try {
+                    // Update current water goal
+                    await db.collection('users').doc(currentUser.uid).collection('watergoals').doc('current').update({
+                        consumed: firebase.firestore.FieldValue.increment(amount),
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    // Check if goal was met today
+                    const today = new Date();
+                    const dateStr = getDateString(today);
+                    
+                    if (consumed >= dailyGoal) {
+                        await db.collection('users').doc(currentUser.uid).collection('waterhistory').doc(dateStr).set({
+                            date: dateStr,
+                            goalMet: true,
+                            amountConsumed: consumed,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                        
+                        // Update calendar
+                        generateCalendar();
+                    } else {
+                        // Update amount consumed even if goal not met yet
+                        await db.collection('users').doc(currentUser.uid).collection('waterhistory').doc(dateStr).set({
+                            amountConsumed: consumed,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    }
+                } catch (error) {
+                    console.error("Error updating water intake:", error);
+                }
+            }
+        }
+        
+        async function addCustomWater() {
+            const customAmount = parseFloat(document.getElementById('customAmount').value);
+            if (!isNaN(customAmount) && customAmount > 0) {
+                consumed += customAmount;
+                updateProgress();
+                document.getElementById('customAmount').value = '';
+                animateButton(`button[onclick="addCustomWater()"]`);
+                
+                // Save to Firestore if user is authenticated
+                if (currentUser) {
+                    try {
+                        // Update current water goal
+                        await db.collection('users').doc(currentUser.uid).collection('watergoals').doc('current').update({
+                            consumed: firebase.firestore.FieldValue.increment(customAmount),
+                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        // Check if goal was met today
+                        const today = new Date();
+                        const dateStr = getDateString(today);
+                        
+                        if (consumed >= dailyGoal) {
+                            await db.collection('users').doc(currentUser.uid).collection('waterhistory').doc(dateStr).set({
+                                date: dateStr,
+                                goalMet: true,
+                                amountConsumed: consumed,
+                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                            }, { merge: true });
+                            
+                            // Update calendar
+                            generateCalendar();
+                        } else {
+                            // Update amount consumed even if goal not met yet
+                            await db.collection('users').doc(currentUser.uid).collection('waterhistory').doc(dateStr).set({
+                                amountConsumed: consumed,
+                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                            }, { merge: true });
+                        }
+                    } catch (error) {
+                        console.error("Error updating water intake:", error);
+                    }
+                }
+            } else {
+                alert('Please enter a valid amount');
+            }
+        }
+        
+        function animateButton(selector) {
+            const button = document.querySelector(selector);
+            if (button) {
+                button.classList.add('animate-pulse');
+                setTimeout(() => {
+                    button.classList.remove('animate-pulse');
+                }, 300);
+            }
+        }
+        
+        function updateProgress() {
+            const percentage = Math.min(100, (consumed / dailyGoal) * 100);
+            
+            document.getElementById('waterLevel').style.height = `${percentage}%`;
+            document.getElementById('progress').style.width = `${percentage}%`;
+            document.getElementById('consumedAmount').textContent = consumed.toFixed(1);
+            
+            // Color changes based on progress
+            if (percentage >= 100) {
+                document.getElementById('waterLevel').style.background = 'linear-gradient(to top, #10b981, #6ee7b7)';
+                document.getElementById('progress').classList.remove('bg-blue-600');
+                document.getElementById('progress').classList.add('bg-green-500');
+                
+                // Show overflow animation when reaching 100%
+                if (!wasFull) {
+                    showOverflowAnimation();
+                    wasFull = true;
+                }
+                
+                // Show celebration if just reached 100%
+                if (percentage === 100) {
+                    showCelebration();
+                }
+            } else {
+                document.getElementById('waterLevel').style.background = 'linear-gradient(to top, #3b82f6, #93c5fd)';
+                document.getElementById('progress').classList.remove('bg-green-500');
+                document.getElementById('progress').classList.add('bg-blue-600');
+                wasFull = false;
+            }
+        }
+        
+        function showOverflowAnimation() {
+            const glass = document.querySelector('.water-glass');
+            const overflow = document.createElement('div');
+            overflow.className = 'water-overflow';
+            glass.appendChild(overflow);
+            
+            // Remove the element after animation completes
+            setTimeout(() => {
+                overflow.remove();
+            }, 1500);
+        }
+        
+        function showCelebration() {
+            const confetti = document.createElement('div');
+            confetti.innerHTML = 
+                `<div class="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
+                    <div class="text-4xl animate-bounce">🎉</div>
+                </div>`;
+            document.body.appendChild(confetti);
+            
+            setTimeout(() => {
+                confetti.remove();
+            }, 2000);
+        }
+        
+        async function resetTracker() {
+            consumed = 0;
+            wasFull = false;
+            updateProgress();
+            
+            // Update Firestore if user is authenticated
+            if (currentUser) {
+                try {
+                    await db.collection('users').doc(currentUser.uid).collection('watergoals').doc('current').update({
+                        consumed: 0,
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    // Update today's history entry
+                    const today = new Date();
+                    const dateStr = getDateString(today);
+                    
+                    await db.collection('users').doc(currentUser.uid).collection('waterhistory').doc(dateStr).set({
+                        date: dateStr,
+                        goalMet: false,
+                        amountConsumed: 0,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                    
+                    // Update calendar
+                    generateCalendar();
+                } catch (error) {
+                    console.error("Error resetting tracker:", error);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

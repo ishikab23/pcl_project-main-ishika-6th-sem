@@ -1,0 +1,93 @@
+
+      
+      <section class="py-16 bg-white" id="mood-workout">
+        <div class="max-w-xl mx-auto text-center">
+          <h2 class="text-2xl font-bold mb-6">How Are You Feeling Today?</h2>
+          <div class="flex justify-center gap-4 text-4xl">
+            <button class="mood-btn" data-mood="tired" title="Tired 😴">😴</button>
+            <button class="mood-btn" data-mood="meh" title="Meh 😐">😐</button>
+            <button class="mood-btn" data-mood="motivated" title="Motivated 💪">💪</button>
+            <button class="mood-btn" data-mood="stressed" title="Stressed 😵">😵</button>
+            <button class="mood-btn" data-mood="happy" title="Happy 😄">😄</button>
+          </div>
+          <div id="mood-output" class="mt-8 text-left"></div>
+        </div>
+      </section>
+
+
+
+
+      js below
+
+
+      <script>
+        document.getElementById("scheduler-form").addEventListener("submit", function (e) {
+          e.preventDefault();
+        
+          const selectedDays = Array.from(document.querySelectorAll("input[name='days']:checked")).map(cb => cb.value);
+          const time = document.getElementById("preferred-time").value;
+          const goal = document.getElementById("goal").value.toLowerCase();
+          const level = document.getElementById("level").value;
+        
+          const workouts = {
+            beginner: ["Full Body Stretch", "Bodyweight Circuit", "Walking Cardio"],
+            intermediate: ["HIIT", "Upper Body Strength", "Yoga Flow"],
+            advanced: ["Heavy Lifting", "Sprint Intervals", "CrossFit Circuit"]
+          };
+        
+          const selectedWorkouts = workouts[level.toLowerCase()];
+          const schedule = selectedDays.map((day, index) => {
+            const workout = selectedWorkouts[index % selectedWorkouts.length];
+            return `${day} ${time} – ${workout}`;
+          });
+        
+          // Display the schedule
+          const outputDiv = document.getElementById("schedule-output");
+          outputDiv.innerHTML = `
+            <h3 class="text-xl font-bold mb-3">Your Weekly Workout Plan</h3>
+            <ul class="list-disc pl-5 space-y-1">
+              ${schedule.map(item => `<li>${item}</li>`).join('')}
+            </ul>
+          `;
+        });
+
+        // Mood-based workout suggestions
+        const workoutSuggestions = {
+        tired: {
+            workout: "15-Min Light Yoga + Deep Breathing",
+            reason: "Helps your body relax while still moving gently."
+        },
+        meh: {
+            workout: "20-Min Bodyweight Circuit",
+            reason: "Boosts endorphins and wakes up your energy levels."
+        },
+        motivated: {
+            workout: "30-Min HIIT + Core Burn",
+            reason: "You're on fire! Maximize results with intensity."
+        },
+        stressed: {
+            workout: "Stretch & Breathe – Guided 10-Min Flow",
+            reason: "Releases tension and calms the nervous system."
+        },
+        happy: {
+            workout: "Dance Cardio Party (20 mins)",
+            reason: "Keep that energy going with a fun, feel-good session."
+        }
+        };
+
+        document.querySelectorAll(".mood-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const mood = btn.dataset.mood;
+            const suggestion = workoutSuggestions[mood];
+
+            const output = document.getElementById("mood-output");
+            output.innerHTML = `
+            <div class="bg-gray-100 p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-bold mb-2">Today's Suggestion</h3>
+                <p class="mb-1"><strong>Workout:</strong> ${suggestion.workout}</p>
+                <p class="text-sm text-gray-600"><em>Why?</em> ${suggestion.reason}</p>
+            </div>
+            `;
+        });
+        });
+        </script>
